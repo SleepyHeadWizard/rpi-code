@@ -1,8 +1,10 @@
-sudo apt-get install wiringpi
+sudo apt-get update
+sudo apt-get install python3-rpi.gpio i2c-tools
 
-import wiringpi as wp
+
 import RPi.GPIO as GPIO
 import time
+import smbus
 
 # Define GPIO pins for Ultrasonic Sensor
 TRIG = 23
@@ -24,27 +26,26 @@ ENABLE = 0b00000100  # Enable bit
 E_PULSE = 0.0005
 E_DELAY = 0.0005
 
-# Initialize I2C interface
-wp.wiringPiSetup()
-fd = wp.wiringPiI2CSetup(I2C_ADDR)
+# Open I2C interface
+bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
 
 def lcd_byte(bits, mode):
     """Send byte to data pins"""
     bits_high = mode | (bits & 0xF0) | LCD_BACKLIGHT
     bits_low = mode | ((bits << 4) & 0xF0) | LCD_BACKLIGHT
 
-    wp.wiringPiI2CWrite(fd, bits_high)
+    bus.write_byte(I2C_ADDR, bits_high)
     lcd_toggle_enable(bits_high)
 
-    wp.wiringPiI2CWrite(fd, bits_low)
+    bus.write_byte(I2C_ADDR, bits_low)
     lcd_toggle_enable(bits_low)
 
 def lcd_toggle_enable(bits):
     """Toggle enable"""
     time.sleep(E_DELAY)
-    wp.wiringPiI2CWrite(fd, (bits | ENABLE))
+    bus.write_byte(I2C_ADDR, (bits | ENABLE))
     time.sleep(E_PULSE)
-    wp.wiringPiI2CWrite(fd, (bits & ~ENABLE))
+    bus.write_byte(I2C_ADDR, (bits & ~ENABLE))
     time.sleep(E_DELAY)
 
 def lcd_init():
