@@ -1,4 +1,6 @@
-import smbus2
+sudo apt-get install wiringpi
+
+import wiringpi as wp
 import RPi.GPIO as GPIO
 import time
 
@@ -22,26 +24,27 @@ ENABLE = 0b00000100  # Enable bit
 E_PULSE = 0.0005
 E_DELAY = 0.0005
 
-# Open I2C interface
-bus = smbus2.SMBus(1)  # Rev 2 Pi uses 1
+# Initialize I2C interface
+wp.wiringPiSetup()
+fd = wp.wiringPiI2CSetup(I2C_ADDR)
 
 def lcd_byte(bits, mode):
     """Send byte to data pins"""
     bits_high = mode | (bits & 0xF0) | LCD_BACKLIGHT
     bits_low = mode | ((bits << 4) & 0xF0) | LCD_BACKLIGHT
 
-    bus.write_byte(I2C_ADDR, bits_high)
+    wp.wiringPiI2CWrite(fd, bits_high)
     lcd_toggle_enable(bits_high)
 
-    bus.write_byte(I2C_ADDR, bits_low)
+    wp.wiringPiI2CWrite(fd, bits_low)
     lcd_toggle_enable(bits_low)
 
 def lcd_toggle_enable(bits):
     """Toggle enable"""
     time.sleep(E_DELAY)
-    bus.write_byte(I2C_ADDR, (bits | ENABLE))
+    wp.wiringPiI2CWrite(fd, (bits | ENABLE))
     time.sleep(E_PULSE)
-    bus.write_byte(I2C_ADDR, (bits & ~ENABLE))
+    wp.wiringPiI2CWrite(fd, (bits & ~ENABLE))
     time.sleep(E_DELAY)
 
 def lcd_init():
